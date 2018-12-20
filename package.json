@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node solve",
     "test": "jest --watchAll"
   },
   "author": "",
