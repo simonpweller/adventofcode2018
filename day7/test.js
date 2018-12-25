@@ -1,4 +1,6 @@
 const solve1 = require('./solve1');
+const solve2 = require('./solve2');
+
 const {parseLines, nextStep} = solve1;
 const lines = [
   'Step C must be finished before step A can begin.',
@@ -9,6 +11,14 @@ const lines = [
   'Step D must be finished before step E can begin.',
   'Step F must be finished before step E can begin.',
 ];
+describe('solve2', () => {
+  it(`should return the number of seconds it will take to complete all operations.
+      numWorkers are available to work in parallel and each step takes baseTime + charIndex seconds to complete
+  `, () => {
+    expect(solve2(lines, 2, 0)).toBe(15);
+  });
+});
+
 describe('solve1', () => {
   it('should return the steps in the order they need to be performed in, given an array of lines', () => {
     expect(solve1(lines)).toBe('CABDFE');

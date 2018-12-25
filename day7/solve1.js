@@ -4,17 +4,20 @@ module.exports = function(lines) {
   while(instructions.length) {
     const step = nextStep(instructions);
     out += step;
-    instructions = updateInstructionsAfterStep(instructions, step);
+    instructions = removeInstruction(instructions, step);
+    instructions = unblockInstruction(instructions, step);
   }
   return out;
 }
 
 module.exports.nextStep = nextStep;
 module.exports.parseLines = parseLines;
+module.exports.removeInstruction = removeInstruction;
+module.exports.unblockInstruction = unblockInstruction;
 
 function nextStep(instructions) {
-  const stepWithoutPrerequisites = instructions.find(instruction => instruction.prerequisites.size === 0).step; 
-  return stepWithoutPrerequisites;
+  const availableInstruction = instructions.find(instruction => instruction.prerequisites.size === 0); 
+  return availableInstruction ? availableInstruction.step : null;
 }
 
 function parseLines(lines) {
@@ -42,8 +45,11 @@ function sortByStep(instructions) {
   return instructions;
 }
 
-function updateInstructionsAfterStep(instructions, step) {
-  instructions = instructions.filter(instruction => instruction.step !== step);
+function removeInstruction(instructions, step) {
+  return instructions.filter(instruction => instruction.step !== step);
+}
+
+function unblockInstruction(instructions, step) {
   return instructions.map(instruction => {
     instruction.prerequisites.delete(step);
     return instruction;
