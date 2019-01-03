@@ -37,3 +37,6 @@ function nodeLength(nodes) {
 function parseNodes([str]) {
   return str.split(' ').map(parseFloat);
 }
+
+module.exports.parseNodes = parseNodes;
+module.exports.nodeLength = nodeLength;
