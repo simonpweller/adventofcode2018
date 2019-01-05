@@ -1,24 +1,15 @@
 module.exports = function (lines) {
-  const serial = parseInput(lines);
-
-  // construct grid
-  const grid = [];
-  for (let y = 1; y <= 300; y++) {
-    const row = [];
-    for (let x = 1; x <= 300; x++) {
-      row.push(squarePower(x, y, serial));
-    }
-    grid.push(row);
-  }
+  const grid = createGrid(lines);
 
   // calculate 3x3 square which has the largest total power
   let currentMaxValue = -Infinity;
   let currentMaxX;
   let currentMaxY;
 
-  for (let y = 1; y <= 298; y++) {
-    for (let x = 1; x <= 298; x++) {
-      const totalPower = calculateTotalPower(grid, x, y);
+  const squareSize = 3;
+  for (let y = 1; y < 300 - squareSize; y++) {
+    for (let x = 1; x < 300 - squareSize; x++) {
+      const totalPower = calculateTotalPower(grid, x, y, squareSize);
       if (totalPower > currentMaxValue) {
         [currentMaxValue, currentMaxX, currentMaxY] = [totalPower, x, y];
       }
@@ -27,10 +18,23 @@ module.exports = function (lines) {
   return `${currentMaxX},${currentMaxY}`;
 }
 
-function calculateTotalPower(grid, x, y) {
+function createGrid(lines) {
+  const serial = parseInput(lines);
+  const grid = [];
+  for (let y = 1; y <= 300; y++) {
+    const row = [];
+    for (let x = 1; x <= 300; x++) {
+      row.push(squarePower(x, y, serial));
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+
+function calculateTotalPower(grid, x, y, size) {
   let totalPower = 0;
-  for (let yOffset = -1; yOffset < 2; yOffset++) {
-    for (let xOffset = -1; xOffset < 2; xOffset++) {
+  for (let yOffset = -1; yOffset < size - 1; yOffset++) {
+    for (let xOffset = -1; xOffset < size - 1; xOffset++) {
       totalPower += grid[y + yOffset][x + xOffset];
     }
   }
@@ -60,3 +64,5 @@ function parseInput([line]) {
 
 module.exports.parseInput = parseInput;
 module.exports.squarePower = squarePower;
+module.exports.calculateTotalPower = calculateTotalPower;
+module.exports.createGrid = createGrid;

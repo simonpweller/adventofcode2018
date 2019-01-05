@@ -1,4 +1,5 @@
 const solve1 = require('./solve1');
+const solve2 = require('./solve2');
 const { parseInput, squarePower } = solve1;
 
 describe('solve1', () => {
@@ -6,7 +7,13 @@ describe('solve1', () => {
     expect(solve1(['42'])).toBe('21,61');
     expect(solve1(['18'])).toBe('33,45');
   });
-})
+});
+
+describe('solve2', () => {
+  it('returns the X,Y,squareSize coordinate of the top-left fuel cell of the square with the largest total power', () => {
+    expect(solve2(['42'])).toBe('232,251,12');
+  });
+});
 
 describe('squarePower', () => {
   it('calculates the power level in a given fuel cell', () => {
