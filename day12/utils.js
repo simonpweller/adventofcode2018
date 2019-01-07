@@ -18,7 +18,7 @@ function parseInput(lines) {
 }
 
 function step(initialState, notes) {
-  const [currentMin, currentMax] = [Math.min(...initialState), Math.max(...initialState)];
+  const [currentMin, currentMax] = [initialState[0], initialState[initialState.length - 1]];
   const nextState = [];
   for (let i = currentMin - 2; i <= currentMax + 2; i++) { // potential locations for plants in the next generation
     if (notes.includes(profile(initialState, i))) {
