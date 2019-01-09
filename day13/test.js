@@ -1,5 +1,6 @@
 const { parseInput, sortCarts, headedTo, move, cross } = require('./utils');
 const solve1 = require('./solve1');
+const solve2 = require('./solve2');
 
 const input = [
   '/->-\\        ',
@@ -180,5 +181,19 @@ describe('solve1', () => {
     expect(solve1(['|', '|', '|', 'v', '^', '|', '|'])).toEqual({ x: 0, y: 4 });
     expect(solve1(['|', '|', 'v', '|', '^', '|', '|'])).toEqual({ x: 0, y: 3 });
     expect(solve1(input)).toEqual({ x: 7, y: 3 })
+  });
+});
+
+describe('solve2', () => {
+  it(`returns the location of the last cart that hasn't crashed`, () => {
+    expect(solve2([
+      '/>-<\\  ',
+      '|   |  ',
+      '| /<+-\\',
+      '| | | v',
+      '\\>+</ |',
+      '  |   ^',
+      '  \\<->/',
+    ])).toEqual({ x: 6, y: 4 });
   });
 });
