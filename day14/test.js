@@ -1,11 +1,6 @@
 const solve1 = require('./solve1');
-const { parseInput, steps, nRecipes } = require('./utils');
-
-describe('parseInput', () => {
-  it('returns the puzzle input', () => {
-    expect(parseInput(['864801'])).toBe(864801);
-  });
-});
+const solve2 = require('./solve2');
+const { steps, nRecipes } = require('./utils');
 
 describe('steps', () => {
   it('returns an object with a property scores - an array of the initial recipe scores, 3 and 7', () => {
@@ -64,5 +59,14 @@ describe('solve1', () => {
     expect(solve1(['5'])).toBe('0124515891');
     expect(solve1(['18'])).toBe('9251071085');
     expect(solve1(['2018'])).toBe('5941429882');
+  });
+});
+
+describe('solve2', () => {
+  it('returns the number of recipes to the left of the first recipes whose scores combine to the digits from the input', () => {
+    expect(solve2(['51589'])).toBe(9);
+    expect(solve2(['01245'])).toBe(5);
+    expect(solve2(['92510'])).toBe(18);
+    expect(solve2(['59414'])).toBe(2018);
   });
 });

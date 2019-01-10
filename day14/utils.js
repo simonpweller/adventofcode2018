@@ -1,5 +1,6 @@
 function parseInput(lines) {
-  return parseFloat([lines]);
+  const [line] = lines;
+  return line;
 }
 
 function steps(steps) {
@@ -40,6 +41,7 @@ function step({ scores, positions }) {
 
 module.exports = {
   parseInput,
+  step,
   steps,
   nRecipes,
 }
