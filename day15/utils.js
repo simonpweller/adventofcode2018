@@ -26,10 +26,37 @@ function parseInput(lines) {
   }
 }
 
+function readingOrder(a, b) {
+  if (a.y < b.y) return -1;
+  if (a.y > b.y) return 1;
+  if (a.x < b.x) return -1;
+  if (a.x > b.x) return 1;
+}
+
+const offsets = {
+  left: {
+    x: -1,
+    y: 0,
+  },
+  right: {
+    x: 1,
+    y: 0,
+  },
+  up: {
+    x: 0,
+    y: -1,
+  },
+  down: {
+    x: 0,
+    y: 1,
+  },
+}
+
 function findNearestTargets(actor, originalMap) {
   const map = [...originalMap];
   const targets = [];
   const { x, y } = actor;
+  const targetType = actor.type === 'E' ? 'G' : 'E';
   let lastPositions = [{ x, y }];
   let step = 1;
 
@@ -37,33 +64,16 @@ function findNearestTargets(actor, originalMap) {
     const nextPositions = [];
     for (position of lastPositions) {
       const { x, y } = position;
-      const left = map[y][x - 1];
-      if (left === 'G') {
-        targets.push({ y, x });
-      } else if (left === '.') {
-        nextPositions.push({ y, x: x - 1 });
-        map[y][x - 1] = step;
-      }
-      const right = map[y][x + 1];
-      if (right === 'G') {
-        targets.push({ y, x });
-      } else if (right === '.') {
-        nextPositions.push({ y, x: x + 1 });
-        map[y][x + 1] = step;
-      }
-      const up = map[y - 1][x];
-      if (up === 'G') {
-        targets.push({ y, x });
-      } else if (up === '.') {
-        nextPositions.push({ y: y - 1, x });
-        map[y - 1][x] = step;
-      }
-      const down = map[y + 1][x];
-      if (down === 'G') {
-        targets.push({ y, x });
-      } else if (down === '.') {
-        nextPositions.push({ y: y + 1, x });
-        map[y + 1][x] = step;
+      for (offset of Object.values(offsets)) {
+        const targetX = x + offset.x;
+        const targetY = y + offset.y;
+        const target = map[targetY][targetX];
+        if (target === targetType) {
+          targets.push({ y, x });
+        } else if (target === '.') {
+          nextPositions.push({ y: targetY, x: targetX });
+          map[targetY][targetX] = step;
+        }
       }
     }
     step++;
@@ -72,7 +82,15 @@ function findNearestTargets(actor, originalMap) {
   return targets;
 }
 
+function selectTarget(actor, map) {
+  const targets = findNearestTargets(actor, map);
+  targets.sort(readingOrder);
+  return targets[0];
+}
+
 module.exports = {
   parseInput,
+  readingOrder,
   findNearestTargets,
+  selectTarget,
 }
