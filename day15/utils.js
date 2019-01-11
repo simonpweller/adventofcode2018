@@ -1,19 +1,14 @@
 function parseInput(lines) {
   const map = lines.map(line => line.split(''));
-  const goblins = [];
-  const elves = [];
+  const actors = [];
 
   map.forEach((row, rowIndex) => {
     row.forEach((cell, colIndex) => {
-      if (cell === 'G') {
-        goblins.push({
+      if (cell === 'G' || cell === 'E') {
+        actors.push({
           x: colIndex,
           y: rowIndex,
-        });
-      } else if (cell === 'E') {
-        elves.push({
-          x: colIndex,
-          y: rowIndex,
+          type: cell,
         });
       }
     });
@@ -21,8 +16,7 @@ function parseInput(lines) {
 
   return {
     map,
-    goblins,
-    elves,
+    actors,
   }
 }
 
@@ -53,14 +47,17 @@ const offsets = {
 }
 
 function findNearestTargets(actor, originalMap) {
-  const map = [...originalMap];
+  const map = [...originalMap.map(row => [...row])];
   const targets = [];
   const { x, y } = actor;
   const targetType = actor.type === 'E' ? 'G' : 'E';
   let lastPositions = [{ x, y }];
   let step = 1;
+  let previouslyExploredSquares = 0;
+  let exploredSquares = 0;
 
-  while (targets.length === 0) {
+  do {
+    previouslyExploredSquares = exploredSquares;
     const nextPositions = [];
     for (position of lastPositions) {
       const { x, y } = position;
@@ -73,19 +70,54 @@ function findNearestTargets(actor, originalMap) {
         } else if (target === '.') {
           nextPositions.push({ y: targetY, x: targetX });
           map[targetY][targetX] = step;
+          exploredSquares++;
+        }
+      }
+    }
+    step++;
+    lastPositions = nextPositions;
+  } while (targets.length === 0 && exploredSquares > previouslyExploredSquares);
+  return targets;
+}
+
+function selectTarget(actor, map) {
+  const targets = findNearestTargets(actor, map);
+  if (targets.length === 0) return null;
+  targets.sort(readingOrder);
+  return targets[0];
+}
+
+function chooseStep(actor, originalMap) {
+  const map = [...originalMap.map(row => [...row])];
+  const destination = selectTarget(actor, map);
+  if (!destination) return null;
+  const { x, y } = destination;
+  const actorType = actor.type;
+  const stepOptions = [];
+  let lastPositions = [{ x, y }];
+  let step = 1;
+
+  while (stepOptions.length === 0 && step < 10) {
+    const nextPositions = [];
+    for (position of lastPositions) {
+      const { x, y } = position;
+      for (offset of Object.values(offsets)) {
+        const targetX = x + offset.x;
+        const targetY = y + offset.y;
+        const target = map[targetY][targetX];
+        if (target === actorType) {
+          stepOptions.push({ y, x });
+        } else if (target === '.') {
+          nextPositions.push({ y: targetY, x: targetX });
+          map[targetY][targetX] = step;
         }
       }
     }
     step++;
     lastPositions = nextPositions;
   }
-  return targets;
-}
-
-function selectTarget(actor, map) {
-  const targets = findNearestTargets(actor, map);
-  targets.sort(readingOrder);
-  return targets[0];
+  stepOptions.sort(readingOrder);
+  return stepOptions[0];
 }
 
 module.exports = {
@@ -93,4 +125,5 @@ module.exports = {
   readingOrder,
   findNearestTargets,
   selectTarget,
+  chooseStep,
 }

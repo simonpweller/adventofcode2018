@@ -19,26 +19,24 @@ describe('parseInput', () => {
     ]);
   });
 
-  it('includes the location of each Goblin in an array called goblins', () => {
-    expect(parseInput(sampleInput).goblins).toEqual([
-      {
-        x: 4,
-        y: 1,
-      }, {
-        x: 2,
-        y: 3,
-      }, {
-        x: 5,
-        y: 3,
-      }
-    ]);
-  });
-
-  it('includes the location of each Elf in an array called elves', () => {
-    expect(parseInput(sampleInput).elves).toEqual([
+  it('includes the location of each actor in an array', () => {
+    expect(parseInput(sampleInput).actors).toEqual([
       {
         x: 1,
         y: 1,
+        type: 'E',
+      }, {
+        x: 4,
+        y: 1,
+        type: 'G',
+      }, {
+        x: 2,
+        y: 3,
+        type: 'G',
+      }, {
+        x: 5,
+        y: 3,
+        type: 'G',
       }
     ]);
   });
@@ -116,5 +114,79 @@ describe('selectTarget', () => {
       x: 3,
       y: 1,
     });
+  });
+
+  it('returns null if there is nowhere to go', () => {
+    const emptyMap = [
+      '#######',
+      '#E....#',
+      '#.....#',
+      '#.....#',
+      '#######',
+    ];
+
+    expect(selectTarget({
+      x: 1,
+      y: 1,
+      type: 'E',
+    }, parseInput(emptyMap).map)).toBe(null);
+  });
+});
+
+describe('chooseStep', () => {
+  it('returns the step a unit can take that will get it closes to its destination', () => {
+    const map = [
+      ['#', '#', '#', '#', '#', '#', '#',],
+      ['#', '.', 'E', '.', '.', 'G', '#',],
+      ['#', '#', '#', '#', '#', '#', '#',],
+    ];
+
+    const actor = {
+      x: 2,
+      y: 1,
+      type: 'E',
+    }
+
+    expect(chooseStep(actor, map)).toEqual({
+      x: 3,
+      y: 1,
+    });
+  });
+
+  it('chooses the first step in reading order if there is more than one option', () => {
+    const map = [
+      ['#', '#', '#', '#', '#', '#', '#'],
+      ['#', '.', 'E', '.', '.', '.', '#'],
+      ['#', '.', '.', '.', '.', '.', '#'],
+      ['#', '.', '.', '.', 'G', '.', '#'],
+      ['#', '#', '#', '#', '#', '#', '#'],
+    ];
+
+    const actor = {
+      x: 2,
+      y: 1,
+      type: 'E',
+    }
+
+    expect(chooseStep(actor, map)).toEqual({
+      x: 3,
+      y: 1,
+    });
+  });
+
+  it('returns null if there is nowhere to go', () => {
+    const emptyMap = [
+      '#######',
+      '#E....#',
+      '#.....#',
+      '#.....#',
+      '#######',
+    ];
+
+    expect(chooseStep({
+      x: 1,
+      y: 1,
+      type: 'E',
+    }, parseInput(emptyMap).map)).toBe(null);
   });
 });
