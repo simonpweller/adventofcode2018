@@ -9,6 +9,7 @@ function parseInput(lines) {
           x: colIndex,
           y: rowIndex,
           type: cell,
+          hitPoints: 200,
         });
       }
     });
@@ -27,30 +28,34 @@ function readingOrder(a, b) {
   if (a.x > b.x) return 1;
 }
 
-const offsets = {
-  left: {
+const offsets = [
+  {
     x: -1,
     y: 0,
   },
-  right: {
+  {
     x: 1,
     y: 0,
   },
-  up: {
+  {
     x: 0,
     y: -1,
   },
-  down: {
+  {
     x: 0,
     y: 1,
   },
+]
+
+function getTargetType(actor) {
+  return actor.type === 'E' ? 'G' : 'E';
 }
 
 function findNearestTargets(actor, originalMap) {
   const map = [...originalMap.map(row => [...row])];
   const targets = [];
   const { x, y } = actor;
-  const targetType = actor.type === 'E' ? 'G' : 'E';
+  const targetType = getTargetType(actor);
   let lastPositions = [{ x, y }];
   let step = 1;
   let previouslyExploredSquares = 0;
@@ -61,7 +66,7 @@ function findNearestTargets(actor, originalMap) {
     const nextPositions = [];
     for (position of lastPositions) {
       const { x, y } = position;
-      for (offset of Object.values(offsets)) {
+      for (offset of offsets) {
         const targetX = x + offset.x;
         const targetY = y + offset.y;
         const target = map[targetY][targetX];
@@ -96,7 +101,7 @@ function chooseStep(actor, originalMap) {
   let lastPositions = [{ x, y }];
   let step = 1;
 
-  while (stepOptions.length === 0 && step < 10) {
+  while (stepOptions.length === 0) {
     const nextPositions = [];
     for (position of lastPositions) {
       const { x, y } = position;
@@ -119,26 +124,79 @@ function chooseStep(actor, originalMap) {
   return stepOptions[0];
 }
 
-function takeTurns(rawMap, turns) {
-  const { map, actors } = parseInput(rawMap);
-  for (let i = 0; i < turns; i++) {
-    actors.sort(readingOrder);
-    actors.forEach((actor, index) => {
-      const step = chooseStep(actor, map);
-      if (step) {
-        actors[index] = {
-          ...actor,
-          ...step,
-        };
-        map[actor.y][actor.x] = '.';
-        map[step.y][step.x] = actor.type;
-      }
-    });
+function getAttackTarget(actor, map, units) {
+  const targetType = getTargetType(actor);
+  const { x, y } = actor;
+  const targetLocations = [];
 
+  for (offset of offsets) {
+    const targetX = x + offset.x;
+    const targetY = y + offset.y;
+    const target = map[targetY][targetX];
+    if (target === targetType) {
+      targetLocations.push({ x: targetX, y: targetY });
+    }
+  }
+
+  const targets = targetLocations.map(targetLocation => {
+    return units.find(unit => unit.x === targetLocation.x && unit.y === targetLocation.y);
+  });
+
+  if (!targets.length) return null;
+  if (targets.lengths === 1) return targets[0];
+
+  const minHitpoints = Math.min(...targets.map(target => target.hitPoints));
+  return targets.find(target => target.hitPoints === minHitpoints);
+}
+
+function takeTurns(rawMap, turns) {
+  let { map, actors } = parseInput(rawMap);
+  for (let i = 0; i < turns; i++) {
+    const turnResults = takeSingleTurn(map, actors);
+    map = turnResults.map;
+    actors = turnResults.actors;
   }
 
   return {
     map: map.map(row => row.join('')),
+    actors,
+  }
+}
+
+function takeSingleTurn(map, actors) {
+  let finalTurn = false;
+
+  actors.forEach(actor => {
+    if (actor.hitPoints > 0) {
+      // no target found - combat ends in this round
+      if (!actors.find(unit => unit.type === getTargetType(actor))) finalTurn = true;
+      const step = chooseStep(actor, map);
+      if (step) {
+        // update map
+        map[actor.y][actor.x] = '.';
+        map[step.y][step.x] = actor.type;
+        // update actor
+        actor.y = step.y;
+        actor.x = step.x;
+      }
+      const attackTarget = getAttackTarget(actor, map, actors);
+      if (attackTarget) {
+        attackTarget.hitPoints -= 3;
+        if (attackTarget.hitPoints <= 0) {
+          // remove dead target
+          map[attackTarget.y][attackTarget.x] = '.';
+          actors = actors.filter(actor => actor.hitPoints >= 0);
+        }
+      }
+    }
+  });
+
+  actors.sort(readingOrder);
+
+  return {
+    actors,
+    map,
+    finalTurn,
   }
 }
 
@@ -148,5 +206,7 @@ module.exports = {
   findNearestTargets,
   selectTarget,
   chooseStep,
+  getAttackTarget,
   takeTurns,
+  takeSingleTurn,
 }
