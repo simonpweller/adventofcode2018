@@ -1,4 +1,4 @@
-const { parseInput, findNearestTargets, selectTarget, readingOrder, chooseStep } = require('./utils');
+const { parseInput, findNearestTargets, selectTarget, readingOrder, chooseStep, takeTurns } = require('./utils');
 
 const sampleInput = [
   '#######',
@@ -131,6 +131,32 @@ describe('selectTarget', () => {
       type: 'E',
     }, parseInput(emptyMap).map)).toBe(null);
   });
+
+  it('works for a more complex map', () => {
+    const map = [
+      '#########',
+      '#G..G..G#',
+      '#.......#',
+      '#.......#',
+      '#G..E..G#',
+      '#.......#',
+      '#.......#',
+      '#G..G..G#',
+      '#########',
+    ];
+
+    const parsedMap = parseInput(map).map;
+    const actor = {
+      x: 1,
+      y: 1,
+      type: 'G',
+    };
+
+    expect(selectTarget(actor, map)).toEqual({
+      x: 4,
+      y: 3,
+    });
+  });
 });
 
 describe('chooseStep', () => {
@@ -174,6 +200,32 @@ describe('chooseStep', () => {
     });
   });
 
+  it('works for a more complex map', () => {
+    const map = [
+      '#########',
+      '#G..G..G#',
+      '#.......#',
+      '#.......#',
+      '#G..E..G#',
+      '#.......#',
+      '#.......#',
+      '#G..G..G#',
+      '#########',
+    ];
+
+    const parsedMap = parseInput(map).map;
+    const actor = {
+      x: 1,
+      y: 1,
+      type: 'G',
+    }
+
+    expect(chooseStep(actor, map)).toEqual({
+      x: 2,
+      y: 1,
+    });
+  });
+
   it('returns null if there is nowhere to go', () => {
     const emptyMap = [
       '#######',
@@ -188,5 +240,61 @@ describe('chooseStep', () => {
       y: 1,
       type: 'E',
     }, parseInput(emptyMap).map)).toBe(null);
+  });
+
+  it('returns null if an enemy is already in range', () => {
+    const enemyInRangeMap = [
+      '#######',
+      '#G.EG.#',
+      '#######',
+    ];
+
+    expect(chooseStep({
+      x: 3,
+      y: 1,
+      type: 'E',
+    }, parseInput(enemyInRangeMap).map)).toBe(null);
+  });
+});
+
+describe('takeTurns', () => {
+  const sampleMap = [
+    '#########',
+    '#G..G..G#',
+    '#.......#',
+    '#.......#',
+    '#G..E..G#',
+    '#.......#',
+    '#.......#',
+    '#G..G..G#',
+    '#########',
+  ];
+
+  it('advances the passed in map by a set number of turns and returns the new state', () => {
+    expect(takeTurns(sampleMap, 1).map).toEqual([
+      '#########',
+      '#.G...G.#',
+      '#...G...#',
+      '#...E..G#',
+      '#.G.....#',
+      '#.......#',
+      '#G..G..G#',
+      '#.......#',
+      '#########',
+    ]);
+  });
+
+  it('works for multiple turns', () => {
+    expect(takeTurns(sampleMap, 3).map).toEqual([
+      '#########',
+      '#.......#',
+      '#..GGG..#',
+      '#..GEG..#',
+      '#G..G...#',
+      '#......G#',
+      '#.......#',
+      '#.......#',
+      '#########',
+    ]);
   });
 });

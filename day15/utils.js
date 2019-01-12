@@ -90,9 +90,8 @@ function selectTarget(actor, map) {
 function chooseStep(actor, originalMap) {
   const map = [...originalMap.map(row => [...row])];
   const destination = selectTarget(actor, map);
-  if (!destination) return null;
+  if (!destination || (destination.x === actor.x && destination.y === actor.y)) return null;
   const { x, y } = destination;
-  const actorType = actor.type;
   const stepOptions = [];
   let lastPositions = [{ x, y }];
   let step = 1;
@@ -105,7 +104,7 @@ function chooseStep(actor, originalMap) {
         const targetX = x + offset.x;
         const targetY = y + offset.y;
         const target = map[targetY][targetX];
-        if (target === actorType) {
+        if (targetX === actor.x && targetY === actor.y) {
           stepOptions.push({ y, x });
         } else if (target === '.') {
           nextPositions.push({ y: targetY, x: targetX });
@@ -120,10 +119,34 @@ function chooseStep(actor, originalMap) {
   return stepOptions[0];
 }
 
+function takeTurns(rawMap, turns) {
+  const { map, actors } = parseInput(rawMap);
+  for (let i = 0; i < turns; i++) {
+    actors.sort(readingOrder);
+    actors.forEach((actor, index) => {
+      const step = chooseStep(actor, map);
+      if (step) {
+        actors[index] = {
+          ...actor,
+          ...step,
+        };
+        map[actor.y][actor.x] = '.';
+        map[step.y][step.x] = actor.type;
+      }
+    });
+
+  }
+
+  return {
+    map: map.map(row => row.join('')),
+  }
+}
+
 module.exports = {
   parseInput,
   readingOrder,
   findNearestTargets,
   selectTarget,
   chooseStep,
+  takeTurns,
 }
