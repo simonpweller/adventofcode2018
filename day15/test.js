@@ -1,5 +1,6 @@
 const { parseInput, findNearestTargets, selectTarget, readingOrder, chooseStep, takeTurns, getAttackTarget } = require('./utils');
 const solve1 = require('./solve1');
+const solve2 = require('./solve2');
 
 const sampleInput = [
   '#######',
@@ -20,28 +21,32 @@ describe('parseInput', () => {
     ]);
   });
 
-  it('includes the location of each actor in an array, initialized with 200 hit points', () => {
+  it('includes the location of each actor in an array, initialized with 200 hit points and attackStrength 3', () => {
     expect(parseInput(sampleInput).actors).toEqual([
       {
         x: 1,
         y: 1,
         hitPoints: 200,
         type: 'E',
+        attackStrength: 3,
       }, {
         x: 4,
         y: 1,
         hitPoints: 200,
         type: 'G',
+        attackStrength: 3,
       }, {
         x: 2,
         y: 3,
         hitPoints: 200,
         type: 'G',
+        attackStrength: 3,
       }, {
         x: 5,
         y: 3,
         hitPoints: 200,
         type: 'G',
+        attackStrength: 3,
       }
     ]);
   });
@@ -372,12 +377,12 @@ describe('takeTurns', () => {
 
   it('returns the actors', () => {
     expect(takeTurns(combatMap, 0).actors).toEqual([
-      { "hitPoints": 200, "type": "G", "x": 2, "y": 1 },
-      { "hitPoints": 200, "type": "E", "x": 4, "y": 2 },
-      { "hitPoints": 200, "type": "G", "x": 5, "y": 2 },
-      { "hitPoints": 200, "type": "G", "x": 5, "y": 3 },
-      { "hitPoints": 200, "type": "G", "x": 3, "y": 4 },
-      { "hitPoints": 200, "type": "E", "x": 5, "y": 4 }
+      { "hitPoints": 200, "type": "G", "x": 2, "y": 1, attackStrength: 3 },
+      { "hitPoints": 200, "type": "E", "x": 4, "y": 2, attackStrength: 3 },
+      { "hitPoints": 200, "type": "G", "x": 5, "y": 2, attackStrength: 3 },
+      { "hitPoints": 200, "type": "G", "x": 5, "y": 3, attackStrength: 3 },
+      { "hitPoints": 200, "type": "G", "x": 3, "y": 4, attackStrength: 3 },
+      { "hitPoints": 200, "type": "E", "x": 5, "y": 4, attackStrength: 3 }
     ]);
   });
 
@@ -466,7 +471,46 @@ describe('solve1', () => {
     ];
 
     expect(solve1(map4)).toBe(27755);
-
-
   });
+});
+
+describe('solve2', () => {
+  it(`returns the battle outcome (number of completed rounds * hit points of remaining units) 
+    of the battle in which the Elves have the lowest integer attack power (at least 4) that allows them to win without a single death`, () => {
+      const map2 = [
+        '#######',
+        '#E..EG#',
+        '#.#G.E#',
+        '#E.##E#',
+        '#G..#.#',
+        '#..E#.#',
+        '#######',
+      ];
+
+      expect(solve2(map2)).toBe(31284);
+
+      const map3 = [
+        '#######',
+        '#E.G#.#',
+        '#.#G..#',
+        '#G.#.G#',
+        '#G..#.#',
+        '#...E.#',
+        '#######',
+      ];
+
+      expect(solve2(map3)).toBe(3478);
+
+      const map1 = [
+        '#######',
+        '#.G...#',
+        '#...EG#',
+        '#.#.#G#',
+        '#..G#E#',
+        '#.....#',
+        '#######',
+      ];
+
+      expect(solve2(map1)).toBe(4988);
+    });
 });

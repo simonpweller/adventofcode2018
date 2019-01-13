@@ -10,6 +10,7 @@ function parseInput(lines) {
           y: rowIndex,
           type: cell,
           hitPoints: 200,
+          attackStrength: 3,
         });
       }
     });
@@ -125,28 +126,29 @@ function chooseStep(actor, originalMap) {
 }
 
 function getAttackTarget(actor, map, units) {
-  const targetType = getTargetType(actor);
   const { x, y } = actor;
   const targetLocations = [];
 
+  // check all four directions for targets
   for (offset of offsets) {
     const targetX = x + offset.x;
     const targetY = y + offset.y;
-    const target = map[targetY][targetX];
-    if (target === targetType) {
+    if (map[targetY][targetX] === getTargetType(actor)) {
       targetLocations.push({ x: targetX, y: targetY });
     }
   }
 
+  // map targetLocations to targets
   const targets = targetLocations.map(targetLocation => {
-    return units.find(unit => unit.x === targetLocation.x && unit.y === targetLocation.y);
+    return units.find(unit => unit.x === targetLocation.x && unit.y === targetLocation.y && unit.hitPoints > 0);
   });
 
+  // select target
   if (!targets.length) return null;
-  if (targets.lengths === 1) return targets[0];
+  targets.sort(readingOrder);
+  targets.sort((a, b) => a.hitPoints - b.hitPoints);
 
-  const minHitpoints = Math.min(...targets.map(target => target.hitPoints));
-  return targets.find(target => target.hitPoints === minHitpoints);
+  return targets[0];
 }
 
 function takeTurns(rawMap, turns) {
@@ -166,31 +168,34 @@ function takeTurns(rawMap, turns) {
 function takeSingleTurn(map, actors) {
   let finalTurn = false;
 
-  actors.forEach(actor => {
-    if (actor.hitPoints > 0) {
-      // no target found - combat ends in this round
-      if (!actors.find(unit => unit.type === getTargetType(actor))) finalTurn = true;
-      const step = chooseStep(actor, map);
-      if (step) {
-        // update map
-        map[actor.y][actor.x] = '.';
-        map[step.y][step.x] = actor.type;
-        // update actor
-        actor.y = step.y;
-        actor.x = step.x;
-      }
-      const attackTarget = getAttackTarget(actor, map, actors);
-      if (attackTarget) {
-        attackTarget.hitPoints -= 3;
-        if (attackTarget.hitPoints <= 0) {
-          // remove dead target
-          map[attackTarget.y][attackTarget.x] = '.';
-          actors = actors.filter(actor => actor.hitPoints >= 0);
-        }
+  for (actor of actors) {
+    // unit already dead?
+    if (actor.hitPoints <= 0) continue;
+    // no target found - combat ends in this round
+    if (!actors.find(unit => unit.type === getTargetType(actor))) finalTurn = true;
+
+    // movement
+    const step = chooseStep(actor, map);
+    if (step) {
+      // update map
+      map[actor.y][actor.x] = '.';
+      map[step.y][step.x] = actor.type;
+      // update actor
+      actor.y = step.y;
+      actor.x = step.x;
+    }
+
+    // attacking
+    const attackTarget = getAttackTarget(actor, map, actors);
+    if (attackTarget) {
+      attackTarget.hitPoints -= actor.attackStrength;
+      if (attackTarget.hitPoints <= 0) {
+        // remove dead target
+        map[attackTarget.y][attackTarget.x] = '.';
+        actors = actors.filter(actor => actor.hitPoints > 0);
       }
     }
-  });
-
+  }
   actors.sort(readingOrder);
 
   return {
