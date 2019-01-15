@@ -111,4 +111,4 @@ module.exports = {
   eqir,
   eqri,
   eqrr,
-}
+} 

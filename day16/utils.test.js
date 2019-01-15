@@ -47,8 +47,8 @@ describe('parseInput', () => {
   ];
 
   it('parses the input into samples', () => {
-    expect(parseInput(lines)).toHaveLength(3);
-    expect(parseInput(lines)[2]).toEqual({
+    expect(parseInput(lines).samples).toHaveLength(3);
+    expect(parseInput(lines).samples[2]).toEqual({
       before: [0, 1, 1, 1],
       instructions: [14, 0, 0, 2],
       after: [0, 1, 0, 1],
