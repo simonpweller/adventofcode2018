@@ -1,20 +1,46 @@
+function simulate(lines, turns) {
+  const map = parseInput(lines);
+
+  let currentPosition = getBelow(getStartingPosition(map));
+  for (let i = 0; i < turns; i++) {
+    const below = getBelow(currentPosition);
+    const cellBelow = getCell(map, below);
+    if (cellBelow === '.') {
+      setCell(map, currentPosition, '|');
+      currentPosition = below;
+    } else if (cellBelow === '#') {
+      setCell(map, currentPosition, '~');
+
+    }
+  }
+
+  return map;
+}
+
+function getStartingPosition(map) {
+  return {
+    x: map[0].findIndex(cell => cell === '+'),
+    y: 0,
+  }
+}
+
 function parseInput(lines) {
   const clays = lines.reduce((clays, line) => clays.concat(...parseVein(line)), []);
 
   const { xMin, xMax, yMax } = getRanges(clays);
 
-  const rows = Array.from({ length: yMax + 1 }, v => Array.from({ length: xMax - xMin + 3 }, v => '.'));
+  const map = Array.from({ length: yMax + 1 }, v => Array.from({ length: xMax - xMin + 3 }, v => '.'));
 
   const xOffset = -xMin + 1;
 
-  rows[0][500 + xOffset] = '+';
+  map[0][500 + xOffset] = '+';
 
   for (clay of clays) {
     const { x, y } = clay;
-    rows[y][x + xOffset] = '#';
+    map[y][x + xOffset] = '#';
   }
 
-  return rows;
+  return map;
 }
 
 function getRanges(coords) {
@@ -40,7 +66,26 @@ function parseVein(vein) {
   return vein.startsWith('x') ? range.map(y => ({ x: fix, y })) : range.map(x => ({ x, y: fix }));
 }
 
+function getCell(map, { x, y }) {
+  return map[y][x];
+}
+
+function setCell(map, { x, y }, value) {
+  map[y][x] = value;
+  return map;
+}
+
+function getBelow({ x, y }) {
+  return {
+    x,
+    y: y + 1,
+  }
+}
+
 module.exports = {
+  simulate,
   parseInput,
   parseVein,
+  getCell,
+  setCell,
 }
