@@ -1,20 +1,110 @@
-function simulate(lines, turns) {
+function simulate(lines) {
   const map = parseInput(lines);
+  let startingPositions = [getStartingPosition(map)];
+  while (startingPositions.length) {
+    const startingPosition = startingPositions.pop();
+    const newStartingPositions = simulateFromStartingPosition(map, startingPosition);
 
-  let currentPosition = getBelow(getStartingPosition(map));
-  for (let i = 0; i < turns; i++) {
-    const below = getBelow(currentPosition);
-    const cellBelow = getCell(map, below);
-    if (cellBelow === '.') {
-      setCell(map, currentPosition, '|');
-      currentPosition = below;
-    } else if (cellBelow === '#') {
-      setCell(map, currentPosition, '~');
-
+    if (newStartingPositions) {
+      startingPositions.push(...newStartingPositions);
     }
   }
-
   return map;
+}
+
+function simulateFromStartingPosition(map, startingPosition) {
+  mainLoop: while (true) {
+    let currentPosition = getBelow(startingPosition);
+    let below = getBelow(currentPosition);
+    let cellBelow = getCell(map, below);
+
+    // water falls downwards as long as there is space
+    while (cellBelow === '.' || cellBelow === '|') {
+      if (cellBelow === '.') setCell(map, currentPosition, '|');
+      currentPosition = below;
+      below = getBelow(currentPosition);
+      cellBelow = getCell(map, below);
+    }
+
+    if (!cellBelow) {
+      setCell(map, currentPosition, '|');
+      return;
+    };
+
+    // when it hits clay it comes to rest
+    if (cellBelow === '#') {
+      setCell(map, currentPosition, '~');
+      continue;
+    }
+
+    // when it hits water it pushes it to the side
+    // check if the cell to the left or right of the one below is free - if so, add water
+    let offsetLeft = 1;
+    let offsetRight = 1;
+    let left = getLeft(below, offsetLeft);
+    let cellLeft = getCell(map, left);
+    let right = getRight(below, offsetRight);
+    let cellRight = getCell(map, right);
+    while (cellLeft !== '#' || cellRight !== '#') {
+      if (cellLeft === '.') {
+        setCell(map, left, '~');
+        continue mainLoop;
+      } else if (cellRight === '.') {
+        setCell(map, right, '~');
+        continue mainLoop;
+      } else {
+        if (cellLeft === '~') {
+          offsetLeft++;
+          left = getLeft(below, offsetLeft);
+          cellLeft = getCell(map, left);
+        }
+        if (cellRight === '~') {
+          offsetRight++;
+          right = getRight(below, offsetRight);
+          cellRight = getCell(map, right);
+        }
+      }
+    }
+
+    // if there is nowhere for the water to spread, it pushes up
+    if (isContainedLeft(map, currentPosition) && isContainedRight(map, currentPosition)) {
+      setCell(map, currentPosition, '~');
+    } else { // or overflows
+      const newStartingPositions = [];
+
+      let left = getLeft(currentPosition);
+      let cellLeft = getCell(map, left);
+      let cellBelowLeft = getCell(map, getBelow(left));
+      while (cellLeft !== '#' && cellBelowLeft !== '.') {
+        setCell(map, left, '|');
+        left = getLeft(left);
+        cellLeft = getCell(map, left);
+        cellBelowLeft = getCell(map, getBelow(left));
+      }
+
+      if (cellBelowLeft === '.') {
+        setCell(map, left, '|');
+        newStartingPositions.push(left);
+      }
+
+      let right = getRight(currentPosition);
+      let cellRight = getCell(map, right);
+      let cellBelowRight = getCell(map, getBelow(right));
+      while (cellRight !== '#' && cellBelowRight !== '.') {
+        setCell(map, right, '|');
+        right = getRight(right);
+        cellRight = getCell(map, right);
+        cellBelowRight = getCell(map, getBelow(right));
+      }
+
+      if (cellBelowRight === '.') {
+        setCell(map, right, '|');
+        newStartingPositions.push(right);
+      }
+
+      return newStartingPositions;
+    }
+  }
 }
 
 function getStartingPosition(map) {
@@ -67,7 +157,11 @@ function parseVein(vein) {
 }
 
 function getCell(map, { x, y }) {
-  return map[y][x];
+  try {
+    return map[y][x];
+  } catch (e) {
+    return undefined;
+  }
 }
 
 function setCell(map, { x, y }, value) {
@@ -80,6 +174,44 @@ function getBelow({ x, y }) {
     x,
     y: y + 1,
   }
+}
+
+function getLeft({ x, y }, offset = 1) {
+  return {
+    x: x - offset,
+    y,
+  }
+}
+
+function getRight({ x, y }, offset = 1) {
+  return {
+    x: x + offset,
+    y,
+  }
+}
+
+function isContainedLeft(map, position) {
+  let currentPosition = { ...position };
+  while (getCell(map, getBelow(currentPosition)) !== '.') {
+    if (getCell(map, getLeft(currentPosition)) === '.') {
+      currentPosition = getLeft(currentPosition);
+    } else {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isContainedRight(map, position) {
+  let currentPosition = { ...position };
+  while (getCell(map, getBelow(currentPosition)) !== '.') {
+    if (getCell(map, getRight(currentPosition)) === '.') {
+      currentPosition = getRight(currentPosition);
+    } else {
+      return true;
+    }
+  }
+  return false;
 }
 
 module.exports = {
