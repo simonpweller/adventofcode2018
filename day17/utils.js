@@ -1,14 +1,9 @@
 function simulate(lines) {
   const map = parseInput(lines);
   let startingPositions = [getStartingPosition(map)];
-  let i = 0;
   while (startingPositions.length) {
     const startingPosition = startingPositions.pop();
-    if (i === 13) {
-      setCell(map, startingPosition, '*');
-      console.log(map.slice(0, 400).map(row => row.join('')).join('\n'));
-    }
-    const newStartingPositions = simulateFromStartingPosition(map, startingPosition, i === 13);
+    const newStartingPositions = simulateFromStartingPosition(map, startingPosition);
 
     if (newStartingPositions) {
       startingPositions.push(...newStartingPositions);
@@ -17,11 +12,8 @@ function simulate(lines) {
   return map;
 }
 
-function simulateFromStartingPosition(map, startingPosition, log) {
+function simulateFromStartingPosition(map, startingPosition) {
   mainLoop: while (true) {
-    if (log) {
-      console.log(map.slice(0, 400).map(row => row.join('')).join('\n'));
-    }
     let currentPosition = getBelow(startingPosition);
     let below = getBelow(currentPosition);
     let cellBelow = getCell(map, below);
