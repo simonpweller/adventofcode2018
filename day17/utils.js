@@ -1,110 +1,64 @@
-function simulate(lines) {
-  const map = parseInput(lines);
-  let startingPositions = [getStartingPosition(map)];
-  while (startingPositions.length) {
-    const startingPosition = startingPositions.pop();
-    const newStartingPositions = simulateFromStartingPosition(map, startingPosition);
+function flowDown(map, startingPosition) {
+  const startingHeight = startingPosition.y;
+  let currentPosition = { ...startingPosition };
+  let currentCell = getCell(map, currentPosition)
+  let hasFallen;
 
-    if (newStartingPositions) {
-      startingPositions.push(...newStartingPositions);
-    }
+  // water falls downwards as long as there is space
+  while (currentCell === '.') {
+    hasFallen = true;
+    setCell(map, currentPosition, '|');
+    below = getBelow(currentPosition);
+    currentPosition = below;
+    currentCell = getCell(map, currentPosition);
   }
-  return map;
+
+  if (!currentCell) {
+    return false;
+  }
+
+  if (hasFallen) {
+    currentPosition = getAbove(currentPosition);
+  }
+
+  // when it hits ground it expands as far as it can
+  const left = getLeft(currentPosition);
+  const cellLeft = getCell(map, left);
+  const right = getRight(currentPosition);
+  const cellRight = getCell(map, right);
+
+  const rightBlocked = cellRight === '~' || cellRight === '|' || cellRight === '#' || flowDown(map, right);
+  const leftBlocked = cellLeft === '~' || cellLeft === '|' || cellLeft === '#' || flowDown(map, left);
+
+  // if it is blocked in, it pushes up
+  if (leftBlocked && rightBlocked) {
+    setCell(map, currentPosition, '~');
+    currentPosition = getAbove(currentPosition);
+
+    while (startingHeight < currentPosition.y) {
+      const left = getLeft(currentPosition);
+      const cellLeft = getCell(map, left);
+      const right = getRight(currentPosition);
+      const cellRight = getCell(map, right);
+      const rightBlocked = cellRight === '~' || cellRight === '|' || cellRight === '#' || flowDown(map, right);
+      const leftBlocked = cellLeft === '~' || cellLeft === '|' || cellLeft === '#' || flowDown(map, left);
+      if (leftBlocked && rightBlocked) {
+        setCell(map, currentPosition, '~');
+        currentPosition = getAbove(currentPosition);
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+  return false;
 }
 
-function simulateFromStartingPosition(map, startingPosition) {
-  mainLoop: while (true) {
-    let currentPosition = getBelow(startingPosition);
-    let below = getBelow(currentPosition);
-    let cellBelow = getCell(map, below);
-
-    // water falls downwards as long as there is space
-    while (cellBelow === '.' || cellBelow === '|') {
-      if (cellBelow === '.') setCell(map, currentPosition, '|');
-      currentPosition = below;
-      below = getBelow(currentPosition);
-      cellBelow = getCell(map, below);
-    }
-
-    if (!cellBelow) {
-      setCell(map, currentPosition, '|');
-      return;
-    };
-
-    // when it hits clay it comes to rest
-    if (cellBelow === '#') {
-      setCell(map, currentPosition, '~');
-      continue;
-    }
-
-    // when it hits water it pushes it to the side
-    // check if the cell to the left or right of the one below is free - if so, add water
-    let offsetLeft = 1;
-    let offsetRight = 1;
-    let left = getLeft(below, offsetLeft);
-    let cellLeft = getCell(map, left);
-    let right = getRight(below, offsetRight);
-    let cellRight = getCell(map, right);
-    while (cellLeft !== '#' || cellRight !== '#') {
-      if (cellLeft === '.') {
-        setCell(map, left, '~');
-        continue mainLoop;
-      } else if (cellRight === '.') {
-        setCell(map, right, '~');
-        continue mainLoop;
-      } else {
-        if (cellLeft === '~') {
-          offsetLeft++;
-          left = getLeft(below, offsetLeft);
-          cellLeft = getCell(map, left);
-        }
-        if (cellRight === '~') {
-          offsetRight++;
-          right = getRight(below, offsetRight);
-          cellRight = getCell(map, right);
-        }
-      }
-    }
-
-    // if there is nowhere for the water to spread, it pushes up
-    if (isContainedLeft(map, currentPosition) && isContainedRight(map, currentPosition)) {
-      setCell(map, currentPosition, '~');
-    } else { // or overflows
-      const newStartingPositions = [];
-
-      let left = getLeft(currentPosition);
-      let cellLeft = getCell(map, left);
-      let cellBelowLeft = getCell(map, getBelow(left));
-      while (cellLeft !== '#' && cellBelowLeft !== '.') {
-        setCell(map, left, '|');
-        left = getLeft(left);
-        cellLeft = getCell(map, left);
-        cellBelowLeft = getCell(map, getBelow(left));
-      }
-
-      if (cellBelowLeft === '.') {
-        setCell(map, left, '|');
-        newStartingPositions.push(left);
-      }
-
-      let right = getRight(currentPosition);
-      let cellRight = getCell(map, right);
-      let cellBelowRight = getCell(map, getBelow(right));
-      while (cellRight !== '#' && cellBelowRight !== '.') {
-        setCell(map, right, '|');
-        right = getRight(right);
-        cellRight = getCell(map, right);
-        cellBelowRight = getCell(map, getBelow(right));
-      }
-
-      if (cellBelowRight === '.') {
-        setCell(map, right, '|');
-        newStartingPositions.push(right);
-      }
-
-      return newStartingPositions;
-    }
-  }
+function simulate(lines) {
+  const map = parseInput(lines);
+  const startingPosition = getBelow(getStartingPosition(map));
+  flowDown(map, startingPosition);
+  return map;
 }
 
 function getStartingPosition(map) {
@@ -176,6 +130,13 @@ function getBelow({ x, y }) {
   }
 }
 
+function getAbove({ x, y }) {
+  return {
+    x,
+    y: y - 1,
+  }
+}
+
 function getLeft({ x, y }, offset = 1) {
   return {
     x: x - offset,
@@ -188,30 +149,6 @@ function getRight({ x, y }, offset = 1) {
     x: x + offset,
     y,
   }
-}
-
-function isContainedLeft(map, position) {
-  let currentPosition = { ...position };
-  while (getCell(map, getBelow(currentPosition)) !== '.') {
-    if (getCell(map, getLeft(currentPosition)) === '.') {
-      currentPosition = getLeft(currentPosition);
-    } else {
-      return true;
-    }
-  }
-  return false;
-}
-
-function isContainedRight(map, position) {
-  let currentPosition = { ...position };
-  while (getCell(map, getBelow(currentPosition)) !== '.') {
-    if (getCell(map, getRight(currentPosition)) === '.') {
-      currentPosition = getRight(currentPosition);
-    } else {
-      return true;
-    }
-  }
-  return false;
 }
 
 module.exports = {

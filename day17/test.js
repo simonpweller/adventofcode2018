@@ -29,7 +29,7 @@ const map = [
   ['.', '.', '.', '.', '#', '#', '#', '#', '#', '#', '#', '.', '.', '.',],
 ];
 
-describe('solve1', () => {
+describe.only('solve1', () => {
   it('returns the number of tiles water can reach', () => {
     expect(solve1(lines)).toBe(57);
   });
