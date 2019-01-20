@@ -1,64 +1,86 @@
-function flowDown(map, startingPosition) {
-  const startingHeight = startingPosition.y;
-  let currentPosition = { ...startingPosition };
-  let currentCell = getCell(map, currentPosition)
-  let hasFallen;
+function Drop(map, { x, y }, drops) {
+  this.map = map;
+  this.position = { x, y };
+  this.drops = drops;
+  this.drops.push(this);
+}
 
-  // water falls downwards as long as there is space
-  while (currentCell === '.') {
-    hasFallen = true;
-    setCell(map, currentPosition, '|');
-    below = getBelow(currentPosition);
-    currentPosition = below;
-    currentCell = getCell(map, currentPosition);
-  }
-
-  if (!currentCell) {
-    return false;
-  }
-
-  if (hasFallen) {
-    currentPosition = getAbove(currentPosition);
-  }
-
-  // when it hits ground it expands as far as it can
-  const left = getLeft(currentPosition);
-  const cellLeft = getCell(map, left);
-  const right = getRight(currentPosition);
-  const cellRight = getCell(map, right);
-
-  const rightBlocked = cellRight === '~' || cellRight === '|' || cellRight === '#' || flowDown(map, right);
-  const leftBlocked = cellLeft === '~' || cellLeft === '|' || cellLeft === '#' || flowDown(map, left);
-
-  // if it is blocked in, it pushes up
-  if (leftBlocked && rightBlocked) {
-    setCell(map, currentPosition, '~');
-    currentPosition = getAbove(currentPosition);
-
-    while (startingHeight < currentPosition.y) {
-      const left = getLeft(currentPosition);
-      const cellLeft = getCell(map, left);
-      const right = getRight(currentPosition);
-      const cellRight = getCell(map, right);
-      const rightBlocked = cellRight === '~' || cellRight === '|' || cellRight === '#' || flowDown(map, right);
-      const leftBlocked = cellLeft === '~' || cellLeft === '|' || cellLeft === '#' || flowDown(map, left);
-      if (leftBlocked && rightBlocked) {
-        setCell(map, currentPosition, '~');
-        currentPosition = getAbove(currentPosition);
-      } else {
-        return false;
-      }
-    }
+Drop.prototype.flow = function () {
+  if (getCell(this.map, this.position) === '~') {
     return true;
   }
-  return false;
+
+  const cellBelow = getCellBelow(this.map, this.position);
+  if (cellBelow === '#' || cellBelow === '~') {
+    if (blockedLeft(this.map, this.position) && blockedRight(this.map, this.position)) {
+      setCell(this.map, this.position, '~');
+      return false;
+    } else {
+      setCell(this.map, this.position, '|');
+      let isStable = true;
+
+      const left = getLeft(this.position);
+      if (getCell(this.map, left) === '.') {
+        setCell(this.map, left, '|');
+        new Drop(this.map, left, this.drops);
+        isStable = false;
+      }
+
+      const right = getRight(this.position);
+      if (getCell(this.map, right) === '.') {
+        setCell(this.map, right, '|');
+        new Drop(this.map, right, this.drops);
+        isStable = false;
+      }
+      return isStable;
+    }
+  } else if (cellBelow === '.') {
+    setCell(this.map, this.position, '|');
+    setCell(this.map, getBelow(this.position), '|');
+    new Drop(this.map, getBelow(this.position), this.drops);
+    return false;
+  } else {
+    return true;
+  }
 }
 
 function simulate(lines) {
   const map = parseInput(lines);
   const startingPosition = getBelow(getStartingPosition(map));
-  flowDown(map, startingPosition);
+  const drops = [];
+  let done = false;
+  new Drop(map, startingPosition, drops);
+
+  while (done === false) {
+    done = true;
+    for (drop of drops) {
+      const dropDone = drop.flow();
+      if (!dropDone) done = false;
+    }
+  }
   return map;
+}
+
+function blockedLeft(map, position) {
+  let left = getLeft(position);
+  let leftCell = getCell(map, left);
+  while (leftCell && leftCell !== '.') {
+    if (leftCell === '#') return true;
+    left = getLeft(left);
+    leftCell = getCell(map, left);
+  }
+  return false;
+}
+
+function blockedRight(map, position) {
+  let right = getRight(position);
+  let rightCell = getCell(map, right);
+  while (rightCell && rightCell !== '.') {
+    if (rightCell === '#') return true;
+    right = getRight(right);
+    rightCell = getCell(map, right);
+  }
+  return false;
 }
 
 function getStartingPosition(map) {
@@ -123,17 +145,14 @@ function setCell(map, { x, y }, value) {
   return map;
 }
 
+function getCellBelow(map, position) {
+  return getCell(map, getBelow(position));
+}
+
 function getBelow({ x, y }) {
   return {
     x,
     y: y + 1,
-  }
-}
-
-function getAbove({ x, y }) {
-  return {
-    x,
-    y: y - 1,
   }
 }
 
@@ -152,6 +171,7 @@ function getRight({ x, y }, offset = 1) {
 }
 
 module.exports = {
+  Drop,
   simulate,
   parseInput,
   parseVein,

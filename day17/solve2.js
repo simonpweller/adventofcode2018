@@ -8,7 +8,7 @@ module.exports = function (lines) {
 
   const res = countableResult.reduce((total, row) => {
     return total + row.reduce((rowTotal, cell) => {
-      return rowTotal + Number(['|', '~'].includes(cell));
+      return rowTotal + Number(cell === '~');
     }, 0);
   }, 0);
 
