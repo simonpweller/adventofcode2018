@@ -1,4 +1,5 @@
 const { parseInput, transitionMap, adjacentTrees, adjacentLumber, adjacentOpen, adjacentFields, transitionField } = require('./utils');
+const solve1 = require('./solve1');
 
 describe('solve1', () => {
   it('returns the total resource value of the lumber collection area after 10 minutes?', () => {
